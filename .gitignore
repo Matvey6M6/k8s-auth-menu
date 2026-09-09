@@ -1,0 +1,28 @@
+# Зависимости
+node_modules/
+
+# Артефакты сборки
+dist/
+*.tgz
+
+# Локальные настройки редакторов и IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Мусор файловых менеджеров
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Логи и временные файлы
+*.log
+npm-debug.log*
+*.tmp
+*.bak
+*.orig
+
+# Локальные переопределения npm с токенами реестра
+.npmrc.local
+.env
+.env.local

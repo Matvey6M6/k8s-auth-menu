@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "ES2019",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ES2019"
+        ],
+        "jsx": "react",
+        "strict": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "noEmitOnError": false,
+        "sourceMap": true,
+        "types": [
+            "node",
+            "react"
+        ]
+    },
+    "include": [
+        "src/**/*"
+    ]
+}
