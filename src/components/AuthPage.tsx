@@ -82,7 +82,7 @@ export const AuthPage: React.FC = () => {
 
       say(res.message);
       setNotice({ tone: res.ok ? "good" : "warn", text: res.message });
-    } catch (e: any) {
+    } catch (e) {
       const text = `Ошибка проверки: ${String(e?.message ?? e)}`;
 
       say(text);
@@ -220,7 +220,7 @@ export const AuthPage: React.FC = () => {
           text: summary
         });
       }
-    } catch (e: any) {
+    } catch (e) {
       const text = `Непредвиденная ошибка: ${String(e?.message ?? e)}`;
 
       say(text);

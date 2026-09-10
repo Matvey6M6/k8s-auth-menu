@@ -137,7 +137,7 @@ function runProcess(exec: ResolvedExec, args: string[], opts: RunOptions): Promi
     let stderr = "";
     let timedOut = false;
     let settled = false;
-    let timer: any = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const done = (result: RunResult) => {
       if (settled) return;
@@ -154,7 +154,7 @@ function runProcess(exec: ResolvedExec, args: string[], opts: RunOptions): Promi
         windowsHide: true,
         shell: useShell
       });
-    } catch (e: any) {
+    } catch (e) {
       done({ code: null, stdout: "", stderr: "", timedOut: false, error: String(e?.message ?? e) });
 
       return;
@@ -174,7 +174,7 @@ function runProcess(exec: ResolvedExec, args: string[], opts: RunOptions): Promi
       stderr += d.toString();
     });
 
-    child.on("error", (e: any) => {
+    child.on("error", (e: Error) => {
       done({ code: null, stdout, stderr, timedOut, error: String(e?.message ?? e) });
     });
 
@@ -204,7 +204,7 @@ export function childEnv(target: KubeconfigTarget): NodeJS.ProcessEnv {
     } catch {}
   } else {
     delete env.KUBECONFIG;
-    delete (env as any).kubeconfig;
+    delete (env as Record<string, string | undefined>).kubeconfig;
     try {
       fs.mkdirSync(path.dirname(target.display), { recursive: true });
     } catch {}

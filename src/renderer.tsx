@@ -7,17 +7,17 @@ import { injectStyle } from "./ui";
 
 const PAGE_ID = "auth";
 
-let instance: K8sAuthMenuRenderer | null = null;
+let openPage: (() => void) | null = null;
 
 function openAuthPage(): void {
-  if (!instance) {
-    console.warn("[k8s-auth-menu] extension instance is not ready yet");
+  if (!openPage) {
+    console.warn("[k8s-auth-menu] extension is not activated yet");
 
     return;
   }
 
   try {
-    void instance.navigate(PAGE_ID);
+    openPage();
   } catch (e) {
     console.error("[k8s-auth-menu] navigate failed:", e);
   }
@@ -98,13 +98,12 @@ export default class K8sAuthMenuRenderer extends Renderer.LensExtension {
     }
   ];
 
-  constructor(...args: any[]) {
-    super(...args);
-    instance = this;
-  }
+  private readonly goToPage = (): void => {
+    void this.navigate(PAGE_ID);
+  };
 
   async onActivate(): Promise<void> {
-    instance = this;
+    openPage = this.goToPage;
 
     try {
       injectStyle();
@@ -112,12 +111,12 @@ export default class K8sAuthMenuRenderer extends Renderer.LensExtension {
       console.error("[k8s-auth-menu] injectStyle failed:", e);
     }
 
-    (globalThis as any).__k8sAuthNav = openAuthPage;
+    (globalThis as Record<string, unknown>).__k8sAuthNav = openAuthPage;
 
     console.log("[k8s-auth-menu] renderer activated, pathname:", location.pathname);
   }
 
   onDeactivate(): void {
-    if (instance === this) instance = null;
+    if (openPage === this.goToPage) openPage = null;
   }
 }

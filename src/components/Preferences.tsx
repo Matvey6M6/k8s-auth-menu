@@ -47,7 +47,7 @@ export const Preferences: React.FC = () => {
       const res = await checkKubectl(cfg.kubectlPath, target);
 
       setNotice({ tone: res.ok ? "good" : "warn", text: res.message });
-    } catch (e: any) {
+    } catch (e) {
       setNotice({ tone: "warn", text: `Ошибка проверки: ${String(e?.message ?? e)}` });
     } finally {
       setChecking(false);

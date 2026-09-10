@@ -141,29 +141,30 @@ export function wipeKubeconfig(target: KubeconfigTarget, keepBackup: boolean): W
   return { path: file, backup, bytesBefore };
 }
 
-function clamp(value: any, min: number, max: number, fallback: number): number {
+function clamp(value: unknown, min: number, max: number, fallback: number): number {
   const n = typeof value === "string" ? parseInt(value, 10) : value;
 
-  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
+  return typeof n === "number" && Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
 }
 
-export function sanitizeCluster(raw: any): ClusterEntry | null {
+export function sanitizeCluster(raw: unknown): ClusterEntry | null {
   if (!raw || typeof raw !== "object") return null;
 
-  const rawUrl = typeof raw.url === "string" ? raw.url.trim() : "";
+  const src = raw as Record<string, unknown>;
+  const rawUrl = typeof src.url === "string" ? src.url.trim() : "";
 
   const url = isValidClusterUrl(rawUrl) ? rawUrl : "";
-  const name = typeof raw.name === "string" ? raw.name.trim() : "";
+  const name = typeof src.name === "string" ? src.name.trim() : "";
 
   if (!url && !name) return null;
 
   return {
-    id: typeof raw.id === "string" && raw.id ? raw.id : uid(),
+    id: typeof src.id === "string" && src.id ? src.id : uid(),
     name: name || url,
 
     url,
-    enabled: raw.enabled !== false,
-    group: typeof raw.group === "string" ? raw.group : ""
+    enabled: src.enabled !== false,
+    group: typeof src.group === "string" ? src.group : ""
   };
 }
 
@@ -179,7 +180,7 @@ function dedupeIds(list: ClusterEntry[]): ClusterEntry[] {
   });
 }
 
-export function sanitizeClusters(raw: any): ClusterEntry[] {
+export function sanitizeClusters(raw: unknown): ClusterEntry[] {
   if (!Array.isArray(raw)) return [];
 
   const list: ClusterEntry[] = [];
@@ -193,23 +194,25 @@ export function sanitizeClusters(raw: any): ClusterEntry[] {
   return dedupeIds(list);
 }
 
-function sanitize(raw: any): ConfigModel {
+function sanitize(raw: unknown): ConfigModel {
   const base = defaultConfig();
 
   if (!raw || typeof raw !== "object") return base;
 
-  const clusters = Array.isArray(raw.clusters) ? sanitizeClusters(raw.clusters) : base.clusters;
+  const src = raw as Record<string, unknown>;
+
+  const clusters = Array.isArray(src.clusters) ? sanitizeClusters(src.clusters) : base.clusters;
 
   return {
     version: 1,
-    username: typeof raw.username === "string" ? raw.username : "",
-    kubectlPath: typeof raw.kubectlPath === "string" && raw.kubectlPath ? raw.kubectlPath : base.kubectlPath,
-    kubeconfigMode: raw.kubeconfigMode === "custom" ? "custom" : "default",
-    kubeconfigPath: typeof raw.kubeconfigPath === "string" ? raw.kubeconfigPath : "",
-    insecureTls: Boolean(raw.insecureTls),
-    passwordViaStdin: Boolean(raw.passwordViaStdin),
-    delayMs: clamp(raw.delayMs, 0, 10_000, base.delayMs),
-    retries: clamp(raw.retries, 0, 5, base.retries),
+    username: typeof src.username === "string" ? src.username : "",
+    kubectlPath: typeof src.kubectlPath === "string" && src.kubectlPath ? src.kubectlPath : base.kubectlPath,
+    kubeconfigMode: src.kubeconfigMode === "custom" ? "custom" : "default",
+    kubeconfigPath: typeof src.kubeconfigPath === "string" ? src.kubeconfigPath : "",
+    insecureTls: Boolean(src.insecureTls),
+    passwordViaStdin: Boolean(src.passwordViaStdin),
+    delayMs: clamp(src.delayMs, 0, 10_000, base.delayMs),
+    retries: clamp(src.retries, 0, 5, base.retries),
     clusters
   };
 }
@@ -219,7 +222,7 @@ type Listener = (cfg: ConfigModel) => void;
 class ConfigStore {
   private data: ConfigModel | null = null;
   private listeners = new Set<Listener>();
-  private saveTimer: any = null;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   get(): ConfigModel {
     if (!this.data) this.data = this.readFromDisk();
@@ -299,7 +302,7 @@ class ConfigStore {
     });
   }
 
-  replaceClusters(clusters: any[]): number {
+  replaceClusters(clusters: unknown[]): number {
     const next = sanitizeClusters(clusters);
 
     this.set({ clusters: next });

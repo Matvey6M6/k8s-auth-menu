@@ -1,7 +1,27 @@
 {
     "name": "@mmmatvey122/k8s-auth-menu",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Batch login to Kubernetes/OpenShift clusters from OpenLens",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Matvey6M6/k8s-auth-menu.git"
+    },
+    "homepage": "https://github.com/Matvey6M6/k8s-auth-menu#readme",
+    "bugs": {
+        "url": "https://github.com/Matvey6M6/k8s-auth-menu/issues"
+    },
+    "keywords": [
+        "lens",
+        "openlens",
+        "k8slens",
+        "extension",
+        "kubernetes",
+        "openshift",
+        "kubeconfig",
+        "login",
+        "authentication",
+        "oc"
+    ],
     "renderer": "dist/renderer.js",
     "license": "MIT",
     "private": true,
@@ -16,11 +36,18 @@
         "build": "webpack --mode=production",
         "dev": "webpack --mode=development --watch",
         "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-        "pack-extension": "npm run clean && npm run build && npm pack"
+        "lint": "eslint src --ext .ts,.tsx",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "check": "npm run lint && npm run typecheck",
+        "pack-extension": "npm run clean && npm run check && npm run build && npm pack"
     },
     "devDependencies": {
+        "@k8slens/extensions": "6.5.2",
         "@types/node": "^18.19.50",
         "@types/react": "^17.0.83",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "eslint": "^8.57.0",
         "ts-loader": "^9.5.1",
         "typescript": "^4.9.5",
         "webpack": "^5.95.0",
