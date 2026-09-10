@@ -1,6 +1,6 @@
 {
     "name": "@mmmatvey122/k8s-auth-menu",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Batch login to Kubernetes/OpenShift clusters from OpenLens",
     "repository": {
         "type": "git",

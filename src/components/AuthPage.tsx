@@ -124,6 +124,7 @@ export const AuthPage: React.FC = () => {
     let okCount = 0;
     let failCount = 0;
     let cancelled = false;
+    let authStopped = false;
 
     try {
       for (let i = 0; i < enabled.length; i++) {
@@ -140,7 +141,7 @@ export const AuthPage: React.FC = () => {
           break;
         }
 
-        let result = { ok: false, message: "не выполнено", durationMs: 0 };
+        let result = { ok: false, message: "не выполнено", durationMs: 0, authFailed: false };
 
         for (let attempt = 1; attempt <= attemptsTotal; attempt++) {
           mark(cluster.id, { phase: "running", attempt, message: attempt > 1 ? `Повтор ${attempt}` : "Вход…" });
@@ -160,7 +161,7 @@ export const AuthPage: React.FC = () => {
             cluster
           );
 
-          if (result.ok || cancelRef.current) break;
+          if (result.ok || result.authFailed || cancelRef.current) break;
 
           if (attempt < attemptsTotal) await sleep(Math.max(cfg.delayMs, 300));
         }
@@ -178,6 +179,18 @@ export const AuthPage: React.FC = () => {
           failCount++;
         }
 
+        if (result.authFailed) {
+          authStopped = true;
+
+          for (let k = i + 1; k < enabled.length; k++) {
+            mark(enabled[k].id, { phase: "cancelled", message: "Не опрошен" });
+          }
+
+          say("ОСТАНОВЛЕНО: сервер отклонил учётные данные.");
+          say("Остальные кластеры не опрашивались, чтобы не заблокировать учётную запись. Проверьте логин и пароль.");
+          break;
+        }
+
         if (i < enabled.length - 1 && cfg.delayMs > 0 && !cancelRef.current) {
           await sleep(cfg.delayMs);
         }
@@ -185,7 +198,7 @@ export const AuthPage: React.FC = () => {
 
       let warned = false;
 
-      if (!cancelled && okCount > 0) {
+      if (!cancelled && !authStopped && okCount > 0) {
         const contexts = await listContexts(cfg.kubectlPath, target);
 
         say(`Контекстов в kubeconfig: ${contexts.length}`);
@@ -210,7 +223,11 @@ export const AuthPage: React.FC = () => {
         }
       }
 
-      const summary = `Готово: успешно ${okCount}, с ошибкой ${failCount}${cancelled ? ", отменено" : ""}.`;
+      const untouched = enabled.length - okCount - failCount;
+
+      const summary = authStopped
+        ? `Прогон остановлен: неверные учётные данные. Успешно ${okCount}, отказ 1, не опрошено ${untouched}. Исправьте логин или пароль — иначе можно заблокировать учётную запись.`
+        : `Готово: успешно ${okCount}, с ошибкой ${failCount}${cancelled ? ", отменено" : ""}.`;
 
       say(summary);
 

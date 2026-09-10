@@ -287,13 +287,35 @@ export interface LoginResult {
   ok: boolean;
   message: string;
   durationMs: number;
+  authFailed: boolean;
+}
+
+const AUTH_FAILURE = [
+  /login failed \(401\b/i,
+  /\b401\b[^\n]{0,40}unauthorized/i,
+  /\(unauthorized\)/i,
+  /verify you have provided correct credentials/i,
+  /invalid (?:user\s?name|credentials|password|login)/i,
+  /authentication (?:failed|error)/i,
+  /account (?:is |has been )?(?:locked|disabled|blocked|expired)/i,
+  /password (?:is |has )?(?:incorrect|expired)/i,
+  /invalid_grant/i,
+  /bad credentials/i
+];
+
+export function isAuthFailure(output: string): boolean {
+  const text = (output || "").trim();
+
+  if (!text) return false;
+
+  return AUTH_FAILURE.some(re => re.test(text));
 }
 
 export async function loginCluster(ctx: LoginContext, cluster: ClusterEntry): Promise<LoginResult> {
   const exec = findExecutable(ctx.command);
 
   if (!exec.found) {
-    return { ok: false, message: `Не найден "${ctx.command}"`, durationMs: 0 };
+    return { ok: false, message: `Не найден "${ctx.command}"`, durationMs: 0, authFailed: false };
   }
 
   const args = ["login", cluster.url, "--username", ctx.username];
@@ -327,11 +349,11 @@ export async function loginCluster(ctx: LoginContext, cluster: ClusterEntry): Pr
     .forEach(line => ctx.onLog(`  ${line}`));
 
   if (res.error) {
-    return { ok: false, message: mask(res.error, ctx.password), durationMs };
+    return { ok: false, message: mask(res.error, ctx.password), durationMs, authFailed: false };
   }
 
   if (res.timedOut) {
-    return { ok: false, message: `Таймаут ${Math.round(ctx.timeoutMs / 1000)} с`, durationMs };
+    return { ok: false, message: `Таймаут ${Math.round(ctx.timeoutMs / 1000)} с`, durationMs, authFailed: false };
   }
 
   if (res.code !== 0) {
@@ -344,10 +366,10 @@ export async function loginCluster(ctx: LoginContext, cluster: ClusterEntry): Pr
       out.split(/\r?\n/).pop() ||
       `exit code ${res.code}`;
 
-    return { ok: false, message: firstErr, durationMs };
+    return { ok: false, message: firstErr, durationMs, authFailed: isAuthFailure(out) };
   }
 
-  return { ok: true, message: "Login successful", durationMs };
+  return { ok: true, message: "Login successful", durationMs, authFailed: false };
 }
 
 export async function listContexts(command: string, target: KubeconfigTarget): Promise<string[]> {
